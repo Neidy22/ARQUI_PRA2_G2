@@ -6,7 +6,7 @@
 extern "C"
 {
   void start();
-  void write_serial();
+  void my_loop();
 }
 
 void setup(){
@@ -14,7 +14,9 @@ void setup(){
 }
 
 void loop(){
-  write_serial();
+  
+  my_loop();
+  
 }
 
   

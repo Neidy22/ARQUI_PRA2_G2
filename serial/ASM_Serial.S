@@ -10,6 +10,8 @@
 ;================================================================================================================
 .global start
 .global write_serial
+.global write_char
+.global my_loop 
 ;================================================================================================================
 
 
@@ -17,12 +19,12 @@
 ;                PINES DE ENTRADA
 ; Definición de los pines a utilizar como INPUTS
 ;================================================================================================================
-.equ SELEC_BTN, 13 ; Botón para seleccionar, conectado al pin digital 13
-.equ MENU_BTN, 12 ; Botón para ir al menú de la aplicación, conectado al pin digital 12
-.equ UP_BTN, 11 ; Botón para ir al menú de la aplicación, conectado al pin digital 11
-.equ DOWN_BTN, 10 ; Botón para ir al menú de la aplicación, conectado al pin digital 10
-.equ LEFT_BTN, 9 ; Botón para ir al menú de la aplicación, conectado al pin digital 9
-.equ RIGHT_BTN, 8 ; Botón para ir al menú de la aplicación, conectado al pin digital 8
+.equ SELEC_BTN, 6 ; Botón para seleccionar, conectado al pin digital 13
+.equ MENU_BTN, 5 ; Botón para ir al menú de la aplicación, conectado al pin digital 12
+.equ UP_BTN, 4 ; Botón para ir al menú de la aplicación, conectado al pin digital 11
+.equ DOWN_BTN, 3 ; Botón para ir al menú de la aplicación, conectado al pin digital 10
+.equ LEFT_BTN, 2 ; Botón para ir al menú de la aplicación, conectado al pin digital 9
+.equ RIGHT_BTN, 1 ; Botón para ir al menú de la aplicación, conectado al pin digital 8
 
 
 ;===============================================================================================================
@@ -30,8 +32,7 @@
 ; Definición de los pines a utilizar como OUTPUT
 ;================================================================================================================
 .equ VIBRATOR, 4 ; Vibrador conectado al pin digital 4
-LDI R16, (1<<VIBRATOR) 
-OUT DDRD, R16  ; Activar el pin del puerto D como salida 
+
 
 
 ;===============================================================================================================
@@ -53,32 +54,58 @@ start:
   STS UCSR0C, R24 
 
   ;---------------------------pinmode(pin, INPUT)---------------------------
-  LDI R16, 0x00 ; Cargo el valor de 0 en el registro R16 
-  OUT DDRB, R16 ; Configura todos los pines del puerto B como inputs porque le envia un 0
+  LDI R16, 0xFF ; Cargo el valor de 1 en el registro R16 
+  OUT DDRB, R16 ; Configura todos los pines del puerto B como inputs porque le envia un 1
 
+
+  ;---------------------------pinmode(pin, OUTPUT)---------------------------
+  LDI R16, (1<<VIBRATOR) 
+  OUT DDRD, R16  ; Activar el pin del puerto D como salida 
+  
+
+  SEI 
   RET 
 
 ;===============================================================================================================
-;                LOOP
+;                MY LOOP
 ; Estará monitoreando la actividad de los botones para detectar cuando se pulse uno y mandará a escribir al 
 ; puerto serial
-;================================================================================================================
-loop:
-  CLR 
-  LDI R16, (1<<SELEC_BTN)
-  IN R17, PINB
-  CPI R17, 0xFF
-  BREQ select_pushed
-select_pushed:
+;===============================================================================================================
+my_loop:
+
+  ;--------------------------- Verificar si el botón select se pulso -------------------------------------------
+  LDI R16, (1<<SELEC_BTN)  ; Cargar en el registro el  pin del puerto B que se va a monitorear
+  IN R17, PINB             ; Obtener el status del pin 
+  CPI R17, 0xFF            ; Comparar si está pulsado
+  BREQ pushed_select
+
   
-  RCALL write_serial
-  CALL delay_10ms 
-  JMP loop
+
+  
+
+  ; Si no se pulsó ningún botón
+  
+  LDI R18, 'n'
+  RCALL write_char
+  LDI R20, 50 
+  RCALL delay_10ms;
+  JMP my_loop 
+
+pushed_select:
+  LDI R18, 'k'        ; Cargar en el registro R18 el caracter a enviar a la app
+  RCALL write_char
+  ;--------------------------- Encender el led por un segundo / vibrar -------------------------------------------
+  SBI PORTD, 4        ; enviando un bit en el pin 4
+  LDI R20, 90         ; Indicar cuántos ms quiero que este encendida
+  RCALL delay_10ms    ; llamar al delay para que espere
+
+  CBI PORTD, 4        ; Apagar el pin 4
+  LDI R20,  10        ; Esperar 10 ms
+  RCALL delay_10ms    ; llamar al delay para que espere
+
+  JMP my_loop 
 
  
-
-
-
 ;===============================================================================================================
 ;                WRITE SERIAL
 ; Tiene la función de comprobar que el TX tenga activada la bandera de disponibilidad para escribir en el puerto
@@ -89,7 +116,7 @@ write_serial:
 load_char:
   LPM R18, Z+              ; Z apunta hacia la cadena de salida, cargar su valor en el registro R18
   CPI R18, 0               ; Comparar si la cadena que se encuentra cargada en el registro R18 ya llegó a su final (0)
-  BREQ completed_sending   ; Si llegó al final de la cadena ramificar hacia la subrutina "next" 
+  BREQ completed_sending   ; Si llegó al final de la cadena ramificar hacia la subrutina "completed_sending" 
 l1:
   LDS R17, UCSR0A
   SBRS R17, UDRE0         ; Verificar si se puede enviar datos por el puerto de transmisión 
@@ -99,6 +126,22 @@ l1:
 completed_sending:
   RCALL delay_10ms
   RET 
+
+;===============================================================================================================
+;                WRITE CHAR
+; Tiene la función de comprobar que el TX tenga activada la bandera de disponibilidad para escribir en el puerto
+; Y escribe el char que trae en R18
+;================================================================================================================
+write_char:
+  LDS R17, UCSR0A
+  SBRS R17, UDRE0         ; Verificar si se puede enviar datos por el puerto de transmisión 
+  RJMP write_char              ; Si el puerto no está disponible esperar hasta que lo este 
+  STS UDR0, R18           ; Almacenar el char cargado en el registro R18 hacia el puerto serial 
+completed_sending_char:
+  RCALL delay_10ms
+  RET 
+
+
 
 ;===============================================================================================================
 ;                MESSAGE
