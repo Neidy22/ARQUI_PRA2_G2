@@ -1,8 +1,6 @@
 
 
-
 // Acceder a las subrutinas y procedimientos del archivo de assembler
-
 extern "C"
 {
   void start();
