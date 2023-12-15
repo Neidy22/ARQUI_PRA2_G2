@@ -19,19 +19,19 @@
 ;                PINES DE ENTRADA
 ; Definición de los pines a utilizar como INPUTS
 ;================================================================================================================
-.equ SELEC_BTN, 6 ; Botón para seleccionar, conectado al pin digital 13
-.equ MENU_BTN, 5 ; Botón para ir al menú de la aplicación, conectado al pin digital 12
-.equ UP_BTN, 4 ; Botón para ir al menú de la aplicación, conectado al pin digital 11
-.equ DOWN_BTN, 3 ; Botón para ir al menú de la aplicación, conectado al pin digital 10
-.equ LEFT_BTN, 2 ; Botón para ir al menú de la aplicación, conectado al pin digital 9
-.equ RIGHT_BTN, 1 ; Botón para ir al menú de la aplicación, conectado al pin digital 8
+; Botón para seleccionar, conectado al pin digital 8
+; Botón para ir al menú de la aplicación, conectado al pin digital 7
+; Botón para seleccionar  arriba, conectado al pin digital 6
+; Botón para seleccionar  abajo, conectado al pin digital 5
+; Botón para seleccionar  izquierda, conectado al pin digital 4
+; Botón para seleccionar  derecha, conectado al pin digital 3
 
 
 ;===============================================================================================================
 ;                PIN DE SALIDA
 ; Definición de los pines a utilizar como OUTPUT
 ;================================================================================================================
-.equ VIBRATOR, 4 ; Vibrador conectado al pin digital 4
+; Vibrador conectado al pin digital 2
 
 
 
@@ -54,16 +54,16 @@ start:
   STS UCSR0C, R24 
 
   ;---------------------------pinmode(pin, INPUT)---------------------------
-  LDI R16, 0xFF ; Cargo el valor de 1 en el registro R16 
-  OUT DDRB, R16 ; Configura todos los pines del puerto B como inputs porque le envia un 1
-
+  CBI DDRB, 0 ; Limpiar PB0 para i/o del botón seleccionar
+  CBI DDRD, 7 ; Limpiar PD7 para i/o del botón menu
+  CBI DDRD, 6 ; Limpiar PD7 para i/o del botón arriba
+  CBI DDRD, 5 ; Limpiar PD7 para i/o del botón abajo
+  CBI DDRD, 4 ; Limpiar PD7 para i/o del botón izquierda
+  CBI DDRD, 3 ; Limpiar PD7 para i/o del botón derecha 
 
   ;---------------------------pinmode(pin, OUTPUT)---------------------------
-  LDI R16, (1<<VIBRATOR) 
-  OUT DDRD, R16  ; Activar el pin del puerto D como salida 
+  SBI DDRD, 2 ; Configurar PD2 para el vibrador
   
-
-  SEI 
   RET 
 
 ;===============================================================================================================
@@ -74,14 +74,23 @@ start:
 my_loop:
 
   ;--------------------------- Verificar si el botón select se pulso -------------------------------------------
-  LDI R16, (1<<SELEC_BTN)  ; Cargar en el registro el  pin del puerto B que se va a monitorear
-  IN R17, PINB             ; Obtener el status del pin 
-  CPI R17, 0xFF            ; Comparar si está pulsado
-  BREQ pushed_select
-
-  
-
-  
+  SBIC PINB, 0
+  RJMP pushed_select
+  ;--------------------------- Verificar si el botón menu se pulso -------------------------------------------
+  SBIC PIND, 7
+  RJMP pushed_menu
+  ;--------------------------- Verificar si el botón arriba -------------------------------------------
+  SBIC PIND, 6
+  RJMP pushed_up
+  ;--------------------------- Verificar si el botón abajo -------------------------------------------
+  SBIC PIND, 5
+  RJMP pushed_down
+  ;--------------------------- Verificar si el botón izquierda -------------------------------------------
+  SBIC PIND, 4
+  RJMP pushed_left
+  ;--------------------------- Verificar si el botón derecha se pulso -------------------------------------------
+  SBIC PIND, 3
+  RJMP pushed_right
 
   ; Si no se pulsó ningún botón
   
@@ -102,7 +111,24 @@ pushed_select:
   CBI PORTD, 4        ; Apagar el pin 4
   LDI R20,  10        ; Esperar 10 ms
   RCALL delay_10ms    ; llamar al delay para que espere
-
+  JMP my_loop
+pushed_menu:
+  LDI R18, 'm'
+  JMP next_cycle
+pushed_up:
+  LDI R18, 'w'
+  JMP next_cycle
+pushed_down:
+  LDI R18, 's'
+  JMP next_cycle
+pushed_left:
+  LDI R18, 'a'
+  JMP next_cycle
+pushed_right:
+  LDI R18, 'd'
+  
+next_cycle:
+  RCALL write_char
   JMP my_loop 
 
  
