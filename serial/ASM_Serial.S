@@ -104,11 +104,11 @@ pushed_select:
   LDI R18, 'k'        ; Cargar en el registro R18 el caracter a enviar a la app
   RCALL write_char
   ;--------------------------- Encender el led por un segundo / vibrar -------------------------------------------
-  SBI PORTD, 4        ; enviando un bit en el pin 4
-  LDI R20, 90         ; Indicar cuántos ms quiero que este encendida
+  SBI PORTD, 2        ; enviando un bit en el pin 2
+  LDI R20, 100         ; Indicar cuántos ms quiero que este encendida
   RCALL delay_10ms    ; llamar al delay para que espere
-
-  CBI PORTD, 4        ; Apagar el pin 4
+  
+  CBI PORTD, 2       ; Apagar el pin 2
   LDI R20,  10        ; Esperar 10 ms
   RCALL delay_10ms    ; llamar al delay para que espere
   JMP my_loop
