@@ -149,7 +149,11 @@ activate_pin_2:
   ;--------------------------- Activar pin 2 por 3 segundos -------------------------------------------
 
   SBI PORTD, 2           ; Activar el pin 2
-  LDI R20, 100            ; Indicar cuántos ciclos de 100 ms (3000 ms en total)
+  LDI R20, 200            ; Indicar cuántos ciclos de 100 ms (2000 ms en total)
+  RCALL delay_10ms      ; Llamar al delay para esperar
+  LDI R20, 200            ; Indicar cuántos ciclos de 100 ms (2000 ms en total)
+  RCALL delay_10ms      ; Llamar al delay para esperar
+  LDI R20, 100            ; Indicar cuántos ciclos de 100 ms (1000 ms en total)
   RCALL delay_10ms      ; Llamar al delay para esperar
 
   CBI PORTD, 2           ; Desactivar el pin 2
