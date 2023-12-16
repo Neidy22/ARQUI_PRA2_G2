@@ -73,6 +73,18 @@ start:
 ;===============================================================================================================
 my_loop:
 
+
+  ;--------------------------- Leer del puerto serial y activar el pin 2 si es 'v' ---------------------------
+  LDS R17, UCSR0A
+  SBRS R17, RXC0        ; Verificar si hay datos disponibles para leer del puerto serial
+  RJMP check_serial_data ; Si no hay datos disponibles, saltar a la próxima verificación
+
+  LDS R18, UDR0          ; Leer el carácter del puerto serial
+  CPI R18, 'v'           ; Comparar si el carácter leído es 'v'
+  RCALL delay_10ms    ; llamar al delay para que espere
+  BREQ activate_pin_2  ; Si es 'v', saltar a activate_pin_2
+
+check_serial_data:
   ;--------------------------- Verificar si el botón select se pulso -------------------------------------------
   SBIC PINB, 0
   RJMP pushed_select
@@ -112,6 +124,8 @@ pushed_select:
   LDI R20,  10        ; Esperar 10 ms
   RCALL delay_10ms    ; llamar al delay para que espere
   JMP my_loop
+
+
 pushed_menu:
   LDI R18, 'm'
   JMP next_cycle
@@ -131,7 +145,23 @@ next_cycle:
   RCALL write_char
   JMP my_loop 
 
- 
+activate_pin_2:
+  ;--------------------------- Activar pin 2 por 3 segundos -------------------------------------------
+
+  SBI PORTD, 2           ; Activar el pin 2
+  LDI R20, 100            ; Indicar cuántos ciclos de 100 ms (3000 ms en total)
+  RCALL delay_10ms      ; Llamar al delay para esperar
+
+  CBI PORTD, 2           ; Desactivar el pin 2
+  LDI R20,  10            ; Esperar 10 ms
+  RCALL delay_10ms       ; Llamar al delay para esperar  
+  JMP my_loop
+
+
+
+
+
+
 ;===============================================================================================================
 ;                WRITE SERIAL
 ; Tiene la función de comprobar que el TX tenga activada la bandera de disponibilidad para escribir en el puerto
