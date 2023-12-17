@@ -106,8 +106,6 @@ check_serial_data:
 
   ; Si no se pulsó ningún botón
   
-  LDI R18, 'n'
-  RCALL write_char
   LDI R20, 50 
   RCALL delay_10ms;
   JMP my_loop 
